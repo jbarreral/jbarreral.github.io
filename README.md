@@ -1,1 +1,103 @@
-# jbarreral.github.io
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Javier Barrera | Engineer & Strategist</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav>
+        <div class="logo">Javier Barrera</div>
+        <div class="menu">
+            <a href="index.html">Home</a>
+            <!-- LINK FIXED: Points to the new separate writing page -->
+            <a href="writing.html">Writing</a>
+            <a href="mailto:javier@gmail.com" class="cta-button">Get in Touch</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <div class="tag">Engineer & Strategist</div>
+            <h1>Optimizing Systems<br>for Work & Life.</h1>
+            <p>Bridging the gap between technical complexity and business strategy. Previously at <strong>AWS</strong> and <strong>Airbus</strong>. Currently based in Italy.</p>
+        </div>
+    </header>
+
+    <!-- LOGO SCROLL BAR FIXED -->
+    <div class="marquee-wrapper">
+        <div class="marquee-track">
+            <!-- Set 1: Unique List -->
+            <img src="assets/aws.png" class="logo-img">
+            <img src="assets/airbus.png" class="logo-img">
+            <img src="assets/180dc.png" class="logo-img">
+            <img src="assets/fpdgi.png" class="logo-img">
+            <img src="assets/uc3m.png" class="logo-img">
+            <img src="assets/taltech.png" class="logo-img">
+            <img src="assets/upm.png" class="logo-img">
+            <img src="assets/hwu.png" class="logo-img">
+            <img src="assets/polito.png" class="logo-img">
+            
+            <!-- Set 2: Duplicate for Infinite Loop -->
+            <img src="assets/aws.png" class="logo-img">
+            <img src="assets/airbus.png" class="logo-img">
+            <img src="assets/180dc.png" class="logo-img">
+            <img src="assets/fpdgi.png" class="logo-img">
+            <img src="assets/uc3m.png" class="logo-img">
+            <img src="assets/taltech.png" class="logo-img">
+            <img src="assets/upm.png" class="logo-img">
+            <img src="assets/hwu.png" class="logo-img">
+            <img src="assets/polito.png" class="logo-img">
+        </div>
+    </div>
+
+    <!-- Featured Section (Subset of writing) -->
+    <section class="grid-container">
+        <a href="articles/aws-strategy.html" class="card">
+            <div class="card-image" style="background: linear-gradient(135deg, #FF9900 0%, #232F3E 100%);"><span>☁️</span></div>
+            <div class="card-content">
+                <span class="card-tag">Career Strategy</span>
+                <h2 class="card-title">Inside the AWS Deal Room</h2>
+                <p class="card-excerpt">How data-driven insights reduced diligence time by 50% for strategic engagements.</p>
+                <div class="read-more">Read Article</div>
+            </div>
+        </a>
+        <!-- LINK FIXED: Points to template -->
+        <a href="articles/template.html" class="card">
+            <div class="card-image" style="background: linear-gradient(135deg, #00205B 0%, #005587 100%);"><span>✈️</span></div>
+            <div class="card-content">
+                <span class="card-tag">Projects</span>
+                <h2 class="card-title">The €110K Efficiency Hack</h2>
+                <p class="card-excerpt">A look at the digital tooling-tracking product I built at Airbus.</p>
+                <div class="read-more">View Case Study</div>
+            </div>
+        </a>
+        <!-- LINK FIXED: Points to template -->
+         <a href="articles/template.html" class="card">
+            <div class="card-image" style="background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);"><span>⚡</span></div>
+            <div class="card-content">
+                <span class="card-tag">Productivity</span>
+                <h2 class="card-title">My "Deep Work" System</h2>
+                <p class="card-excerpt">Managing a Dual MSc and a full-time internship without burning out.</p>
+                <div class="read-more">Read Article</div>
+            </div>
+        </a>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <h3>Javier Barrera</h3>
+            <p>Madrid • Tallinn • Edinburgh • Turin</p>
+            <div class="social-links">
+                <a href="mailto:javier@gmail.com">Email</a>
+                <a href="https://linkedin.com/in/javier">LinkedIn</a>
+            </div>
+            <br><p style="opacity: 0.5; font-size: 0.8rem;">&copy; 2025.</p>
+        </div>
+    </footer>
+</body>
+</html>
