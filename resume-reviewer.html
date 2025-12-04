@@ -5,23 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Resume Reviewer | Javier Barrera</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- LIBRARIES FOR FILE PARSING -->
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <!-- Mammoth.js for DOCX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
     <style>
         /* Tool Specific Styles */
         .reviewer-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
         
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-        .input-group { display: flex; flex-direction: column; }
-        .input-group label { color: var(--text-muted); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+        .input-group { display: flex; flex-direction: column; position: relative; }
+        .input-group label { color: var(--text-muted); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
         
         textarea {
             background: var(--surface); border: 1px solid var(--border); color: var(--text-main);
             padding: 15px; border-radius: 8px; font-family: 'Inter', sans-serif; resize: vertical; min-height: 300px;
-            font-size: 0.9rem; transition: 0.3s;
+            font-size: 0.9rem; transition: 0.3s; line-height: 1.5;
         }
         textarea:focus { outline: none; border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.05); }
+
+        /* Upload Button Styling */
+        .upload-trigger {
+            background: transparent; border: 1px solid var(--text-muted); color: var(--text-main);
+            padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: 0.2s;
+        }
+        .upload-trigger:hover { background: var(--text-main); color: var(--bg); }
+        input[type="file"] { display: none; }
 
         .analyze-btn {
             background: white; color: black; border: none; padding: 15px 40px; font-size: 1rem; font-weight: 700;
@@ -43,7 +60,6 @@
 
         /* Results */
         .results-dashboard { display: none; margin-top: 50px; animation: fadeIn 0.5s ease; }
-        
         .score-header { display: flex; align-items: center; gap: 40px; margin-bottom: 40px; padding: 30px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); }
         .score-circle {
             width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#fff 0%, #333 0%);
@@ -91,13 +107,24 @@
 
     <div class="reviewer-container">
         <div class="input-grid">
+            
+            <!-- Job Description Input -->
             <div class="input-group">
                 <label>1. Paste Job Description (JD)</label>
                 <textarea id="jdInput" placeholder="Paste the full job description here..."></textarea>
             </div>
+
+            <!-- Resume Input (File or Text) -->
             <div class="input-group">
-                <label>2. Paste Your Resume</label>
-                <textarea id="resumeInput" placeholder="Paste your resume text here..."></textarea>
+                <label>
+                    2. Your Resume
+                    <!-- Upload Button -->
+                    <button class="upload-trigger" onclick="document.getElementById('fileUpload').click()">
+                        📂 Upload PDF/DOCX
+                    </button>
+                    <input type="file" id="fileUpload" accept=".pdf,.docx,.txt" onchange="handleFileUpload(this)">
+                </label>
+                <textarea id="resumeInput" placeholder="Paste text OR upload file above. Extracted text will appear here..."></textarea>
             </div>
         </div>
         <button class="analyze-btn" onclick="startAnalysis()">Analyze Resume</button>
