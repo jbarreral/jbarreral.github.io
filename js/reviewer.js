@@ -1,22 +1,48 @@
 /* 
     Resume Reviewer Logic
     Simulates AI analysis using Regex and Heuristics
-    Now supports PDF and DOCX extraction client-side
+    Includes:
+    - PDF/DOCX Text Extraction
+    - Smart Keyword Filtering (Ignoring "Junior", "Manager", etc.)
+    - Australian English Spelling Check
+    - XYZ Impact Formula Check
 */
 
 const messages = [
     "Parsing resume structure...",
-    "Extracting keywords from Job Description...",
-    "Scanning for ATS compatibility...",
+    "Extracting technical skills from Job Description...",
+    "Filtering out generic buzzwords...",
     "Analyzing impact metrics (XYZ Formula)...",
     "Checking spelling (Australian English)...",
     "Finalizing review..."
 ];
 
 // Data Dictionaries
-const strongVerbs = ["Spearheaded", "Engineered", "Architected", "Delivered", "Optimised", "Reduced", "Increased", "Generated"];
-const weakVerbs = ["Helped", "Worked on", "Responsible for", "Assisted", "Participated in"];
-const usSpelling = { "color": "colour", "optimize": "optimise", "analyze": "analyse", "behavior": "behaviour", "center": "centre", "meter": "metre" };
+const strongVerbs = ["Spearheaded", "Engineered", "Architected", "Delivered", "Optimised", "Reduced", "Increased", "Generated", "Implemented", "Revamped"];
+const weakVerbs = ["Helped", "Worked on", "Responsible for", "Assisted", "Participated in", "Handled"];
+const usSpelling = { "color": "colour", "optimize": "optimise", "analyze": "analyse", "behavior": "behaviour", "center": "centre", "meter": "metre", "program": "programme", "catalog": "catalogue" };
+
+// BLOCKLIST: Words the AI should IGNORE even if they are capitalized in the JD.
+const ignoredKeywords = new Set([
+    // Common English Stop Words & Starters
+    "the", "and", "for", "with", "this", "that", "have", "from", "will", "your", "are", "who", "about", 
+    "what", "when", "where", "which", "their", "they", "them", "does", "also", "into", "other", "more", 
+    "some", "these", "those", "can", "could", "would", "should", "than", "then", "over", "under", "after", 
+    "before", "within", "without", "through", "during", "between", "please", "note", "contact", "apply",
+    
+    // Common Spanish Stop Words (since you had Spanish results)
+    "estamos", "buscamos", "participar", "traducir", "trabajar", "ayudar", "para", "por", "con", "los", 
+    "las", "una", "uno", "del", "que", "como", "mas", "sus", "nos", "les", "esta", "este", "gran", "parte",
+    
+    // Generic Job Titles & Corporate Jargon (Not Skills)
+    "junior", "senior", "manager", "lead", "head", "director", "associate", "intern", "vp", "ceo", "cto",
+    "role", "team", "work", "job", "position", "career", "opportunity", "company", "client", "candidate",
+    "experience", "years", "skills", "requirements", "responsibilities", "qualifications", "description",
+    "degree", "bachelor", "master", "diploma", "phd", "mba", "summary", "location", "remote", "hybrid",
+    "onsite", "salary", "benefits", "joining", "world", "people", "culture", "environment", "growth",
+    "shakers", "movers", "innovative", "dynamic", "exciting", "equal", "employer", "gender", "sexual", 
+    "orientation", "disability", "status", "veteran", "national", "origin", "identity", "expression"
+]);
 
 // --- FILE UPLOAD HANDLING ---
 function handleFileUpload(input) {
@@ -120,9 +146,18 @@ function performAnalysis(jd, resume) {
         "Language & Tone (AU English)": []
     };
 
-    // A. JD KEYWORD MATCHING
-    const jdTokens = jd.match(/\b[A-Z][a-zA-Z]+\b/g) || [];
-    const uniqueJdKeywords = [...new Set(jdTokens)].filter(w => w.length > 3 && !["The", "And", "For", "With", "This"].includes(w));
+    // A. INTELLIGENT KEYWORD MATCHING
+    // 1. Extract all words that look like proper nouns (Capitalized)
+    const jdTokens = jd.match(/\b[A-Z][a-zA-Z0-9+]+\b/g) || [];
+    
+    // 2. Filter using the Blocklist
+    const uniqueJdKeywords = [...new Set(jdTokens)].filter(w => {
+        // Must be longer than 2 chars
+        if (w.length < 3) return false;
+        // Check if it's in the ignore list (case insensitive)
+        if (ignoredKeywords.has(w.toLowerCase())) return false;
+        return true;
+    });
     
     let matchedKeywords = 0;
     let missingKeywords = [];
@@ -135,12 +170,17 @@ function performAnalysis(jd, resume) {
         }
     });
 
-    const keywordRatio = matchedKeywords / (uniqueJdKeywords.length || 1);
+    // Score Calculation for Keywords
+    // We cap the denominator to avoid punishing for massive JDs
+    const scoreDenominator = Math.min(uniqueJdKeywords.length, 15) || 1;
+    const keywordRatio = matchedKeywords / scoreDenominator;
     score += Math.min(30, Math.ceil(keywordRatio * 30));
 
     if(missingKeywords.length > 0) {
+        // Show only top 8 missing keywords to keep it clean
+        const topMissing = missingKeywords.slice(0, 8).join(", ");
         suggestions["Job Description Alignment (ATS)"].push(
-            `<strong>Missing Keywords:</strong> Your resume is missing key terms found in the JD. Recruiters and AI scan for these. Consider adding: <span class="highlight">${missingKeywords.slice(0, 10).join(", ")}</span>.`
+            `<strong>Missing Key Terms:</strong> Your resume is missing potential high-value keywords found in the JD. Consider integrating: <span class="highlight">${topMissing}</span>.`
         );
     } else {
         suggestions["Job Description Alignment (ATS)"].push("Great job! Your resume matches the key terminology found in the Job Description.");
@@ -152,55 +192,64 @@ function performAnalysis(jd, resume) {
     let weakSentences = [];
 
     sentences.forEach(sentence => {
+        // Look for numbers, percentages, currency
         if (/\d+%|\$\d+|\d+/.test(sentence)) {
             xyzCount++;
-        } else if (sentence.length > 20) {
+        } else if (sentence.length > 30) { 
+            // Only check long sentences for weak verbs
             weakVerbs.forEach(weak => {
-                if (sentence.toLowerCase().includes(weak.toLowerCase())) {
+                if (sentence.toLowerCase().includes(" " + weak.toLowerCase() + " ")) {
                     weakSentences.push(sentence.trim());
                 }
             });
         }
     });
 
-    if(xyzCount >= 3) score += 40;
+    if(xyzCount >= 4) score += 40;
     else score += (xyzCount * 10);
 
-    if(xyzCount < 3) {
+    if(xyzCount < 4) {
         suggestions["Impact & XYZ Formula (Manager View)"].push(
-            `<strong>Lack of Metrics:</strong> Managers look for ROI. You only have ${xyzCount} sentences with quantifiable metrics. Use the formula: "Accomplished [X] as measured by [Y], by doing [Z]".`
+            `<strong>Lack of Quantifiable Metrics:</strong> Managers need ROI. You only have ${xyzCount} sentences with clear metrics. Use the Google formula: <em>"Accomplished [X] as measured by [Y], by doing [Z]"</em>.`
         );
     }
 
     if(weakSentences.length > 0) {
+        // Show just the first weak sentence as an example
         suggestions["Impact & XYZ Formula (Manager View)"].push(
-            `<strong>Weak Action Verbs:</strong> Replace passive words with strong drivers. Found in: "<em>${weakSentences[0]}...</em>". Try using: <span class="highlight">${strongVerbs.slice(0,5).join(", ")}</span>.`
+            `<strong>Weak Action Verbs:</strong> Replace passive phrases like "Helped" or "Worked on" with strong drivers. Found in: <em>"${weakSentences[0].substring(0, 60)}..."</em>. Try: <span class="highlight">${strongVerbs.slice(0,5).join(", ")}</span>.`
         );
     }
 
-    // C. SPELLING & LOCALIZATION
+    // C. SPELLING & LOCALIZATION (Australian English)
     let spellingErrors = 0;
+    let errorsFound = [];
     for (const [us, au] of Object.entries(usSpelling)) {
-        const regex = new RegExp(`\\b${us}\\w*\\b`, 'gi');
+        // Regex to find whole word matches
+        const regex = new RegExp(`\\b${us}\\b`, 'gi');
         if(regex.test(resume)) {
             spellingErrors++;
-            suggestions["Language & Tone (AU English)"].push(
-                `Found US spelling "<strong>${us}</strong>". Change to Australian/UK spelling "<strong>${au}</strong>".`
-            );
+            errorsFound.push(`${us} → ${au}`);
         }
     }
 
-    if(spellingErrors === 0) score += 15;
-    else score += Math.max(0, 15 - (spellingErrors * 5));
+    if(spellingErrors === 0) {
+        score += 15;
+    } else {
+        score += Math.max(0, 15 - (spellingErrors * 5));
+        suggestions["Language & Tone (AU English)"].push(
+            `<strong>US vs AU Spelling:</strong> Detected American spelling. For Australian applications, switch: <span class="highlight">${errorsFound.join(", ")}</span>.`
+        );
+    }
 
     // D. FORMATTING CHECK
     const hasEmail = /@/.test(resume);
-    const hasLinkedIn = /linkedin\.com/.test(resume);
+    const hasLinkedIn = /linkedin\.com/i.test(resume); // case insensitive check
     
     if(hasEmail && hasLinkedIn) score += 15;
     else {
-        if(!hasEmail) suggestions["Formatting & Structure"].push("<strong>Contact Info:</strong> Could not detect an email address. Ensure it is clearly visible.");
-        if(!hasLinkedIn) suggestions["Formatting & Structure"].push("<strong>Social Proof:</strong> LinkedIn URL missing. Recruiters almost always check LinkedIn.");
+        if(!hasEmail) suggestions["Formatting & Structure"].push("<strong>Contact Info:</strong> Could not detect an email address.");
+        if(!hasLinkedIn) suggestions["Formatting & Structure"].push("<strong>Social Proof:</strong> LinkedIn URL missing. 95% of recruiters check LinkedIn.");
         score += 5;
     }
 
@@ -215,8 +264,11 @@ function renderResults(score, suggestions) {
     const scoreCircle = document.getElementById('scoreCircle');
     const scoreText = document.getElementById('scoreText');
     
-    scoreCircle.style.background = `conic-gradient(#fff ${score}%, #333 ${score}% 100%)`;
-    scoreText.innerText = `${score}%`;
+    // Ensure score doesn't exceed 100
+    const finalScore = Math.min(100, score);
+    
+    scoreCircle.style.background = `conic-gradient(#fff ${finalScore}%, #333 ${finalScore}% 100%)`;
+    scoreText.innerText = `${finalScore}%`;
 
     const container = document.getElementById('feedbackContainer');
     container.innerHTML = ""; 
