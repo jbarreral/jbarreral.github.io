@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Reviewer | Javier Barrera</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Tool Specific Styles */
+        .reviewer-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { color: var(--text-muted); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+        
+        textarea {
+            background: var(--surface); border: 1px solid var(--border); color: var(--text-main);
+            padding: 15px; border-radius: 8px; font-family: 'Inter', sans-serif; resize: vertical; min-height: 300px;
+            font-size: 0.9rem; transition: 0.3s;
+        }
+        textarea:focus { outline: none; border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.05); }
+
+        .analyze-btn {
+            background: white; color: black; border: none; padding: 15px 40px; font-size: 1rem; font-weight: 700;
+            border-radius: 50px; cursor: pointer; display: block; margin: 0 auto; transition: transform 0.2s;
+        }
+        .analyze-btn:hover { transform: scale(1.05); }
+
+        /* Overlay */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 1000; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .loading-text { font-family: 'Manrope', sans-serif; font-size: 1.5rem; margin-top: 20px; color: white; }
+        .spinner {
+            width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite;
+        }
+
+        /* Results */
+        .results-dashboard { display: none; margin-top: 50px; animation: fadeIn 0.5s ease; }
+        
+        .score-header { display: flex; align-items: center; gap: 40px; margin-bottom: 40px; padding: 30px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); }
+        .score-circle {
+            width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#fff 0%, #333 0%);
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .score-inner {
+            width: 100px; height: 100px; background: var(--surface); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; font-family: 'Manrope', sans-serif;
+        }
+        
+        /* Accordion */
+        .category-item { margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+        .category-header {
+            padding: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 1.1rem;
+        }
+        .category-header:hover { background: #252525; }
+        .category-content { display: none; padding: 0 20px 20px 20px; color: #ccc; font-size: 0.95rem; }
+        .category-content ul { padding-left: 20px; margin-top: 10px; }
+        .category-content li { margin-bottom: 10px; line-height: 1.6; }
+        
+        .highlight { color: #ff9900; font-weight: 600; }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media(max-width: 768px) { .input-grid { grid-template-columns: 1fr; } .score-header { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">Javier Barrera</div>
+        <div class="menu">
+            <a href="index.html">Home</a>
+            <a href="writing.html">Writing</a>
+            <a href="resume-reviewer.html" style="color:white;">Resume AI</a>
+        </div>
+    </nav>
+
+    <header class="hero" style="padding: 60px 20px;">
+        <h1>Intelligent Resume Reviewer</h1>
+        <p>Analyze your resume against a job description using the XYZ formula.</p>
+    </header>
+
+    <div class="reviewer-container">
+        <div class="input-grid">
+            <div class="input-group">
+                <label>1. Paste Job Description (JD)</label>
+                <textarea id="jdInput" placeholder="Paste the full job description here..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>2. Paste Your Resume</label>
+                <textarea id="resumeInput" placeholder="Paste your resume text here..."></textarea>
+            </div>
+        </div>
+        <button class="analyze-btn" onclick="startAnalysis()">Analyze Resume</button>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-overlay" id="loader">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingMsg">Initializing...</div>
+    </div>
+
+    <!-- Results -->
+    <div class="reviewer-container results-dashboard" id="results">
+        <div class="score-header">
+            <div class="score-circle" id="scoreCircle">
+                <div class="score-inner" id="scoreText">0%</div>
+            </div>
+            <div>
+                <h2>Analysis Complete</h2>
+                <p style="color: #888;">
+                    We have analyzed your resume for Recruiter keywords, ATS compatibility, and Manager impact metrics (XYZ Formula).
+                    <br><br>
+                    <strong>Australian English (AU/UK)</strong> spellings are enforced.
+                </p>
+            </div>
+        </div>
+
+        <div id="feedbackContainer">
+            <!-- Feedback Categories will be injected here via JS -->
+        </div>
+    </div>
+
+    <script src="js/reviewer.js"></script>
+</body>
+</html>
