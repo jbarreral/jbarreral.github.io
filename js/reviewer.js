@@ -1,23 +1,22 @@
 /* 
-    Resume Reviewer Logic v2.0 (Optimized)
+    Resume Reviewer Logic v3.0 (Structural Analysis)
     - PDF/DOCX Text Extraction
-    - Dual-Language Support (EN/ES)
-    - Anti-Fluff Filtering (Removes generic verbs/nouns)
-    - Hard Skill Prioritization
-    - XYZ Impact Analysis
+    - Context-Aware Keyword Extraction (Solving the "Verb" problem)
+    - Anti-Header Detection
+    - Australian English Spelling Check
+    - XYZ Impact Formula Check
 */
 
 const messages = [
-    "Reading file format...",
-    "Filtering corporate fluff & generic verbs...",
-    "Identifying hard skills (Tech/Tools/Methodologies)...",
-    "Calculating Metric Density (XYZ Formula)...",
-    "Checking Australian English compliance...",
+    "Reading file structure...",
+    "Ignoring headers and bullet-point verbs...",
+    "Extracting mid-sentence Proper Nouns...",
+    "Identifying acronyms & technical terms...",
+    "Analyzing metric density (XYZ Formula)...",
     "Generating strategic feedback..."
 ];
 
-// --- 1. DATA DICTIONARIES (The Knowledge Base) ---
-
+// Data Dictionaries
 const strongVerbs = [
     "Spearheaded", "Engineered", "Architected", "Delivered", "Optimised", 
     "Reduced", "Increased", "Generated", "Implemented", "Revamped", "Orchestrated", 
@@ -29,7 +28,6 @@ const weakVerbs = [
     "Handled", "Duties included", "Tasked with", "Supported"
 ];
 
-// Australian English Mapping
 const usSpelling = { 
     "color": "colour", "optimize": "optimise", "analyze": "analyse", "behavior": "behaviour", 
     "center": "centre", "meter": "metre", "program": "programme", "catalog": "catalogue",
@@ -37,50 +35,7 @@ const usSpelling = {
     "prioritize": "prioritise", "finalized": "finalised"
 };
 
-// THE BLOCKLIST: Words that are NEVER skills (EN & ES)
-// derived from analyzing standard LinkedIn/Indeed boilerplate.
-const ignoredKeywords = new Set([
-    // --- ENGLISH STOP WORDS & FLUFF ---
-    "the", "and", "for", "with", "this", "that", "have", "from", "will", "your", "are", "who", "about", 
-    "what", "when", "where", "which", "their", "they", "them", "does", "also", "into", "other", "more", 
-    "some", "these", "those", "can", "could", "would", "should", "than", "then", "over", "under", "after", 
-    "before", "within", "without", "through", "during", "between", "please", "note", "contact", "apply",
-    "junior", "senior", "manager", "lead", "head", "director", "associate", "intern", "vp", "ceo", "cto",
-    "role", "team", "work", "job", "position", "career", "opportunity", "company", "client", "candidate",
-    "experience", "years", "skills", "requirements", "responsibilities", "qualifications", "description",
-    "degree", "bachelor", "master", "diploma", "phd", "mba", "summary", "location", "remote", "hybrid",
-    "onsite", "salary", "benefits", "joining", "world", "people", "culture", "environment", "growth",
-    "shakers", "movers", "innovative", "dynamic", "exciting", "equal", "employer", "gender", "sexual", 
-    "orientation", "disability", "status", "veteran", "national", "origin", "identity", "expression",
-    "full-stack", "fullstack", "founders", "c-level", "daily", "weekly", "monthly", "ensure", "drive",
-    "collaborate", "support", "assist", "manage", "create", "develop", "maintain", "execute", "perform",
-    "provide", "identify", "participate", "translate", "review", "monitor", "focus", "detail", "oriented",
-    "passionate", "motivated", "enthusiastic", "excellent", "good", "strong", "proven", "track", "record",
-    "ability", "capability", "knowledge", "understanding", "proficiency", "fluent", "native", "plus",
-    "bonus", "ideal", "ideally", "must", "nice", "preferred", "willing", "able", "ready", "start",
-
-    // --- SPANISH STOP WORDS & FLUFF (Based on your feedback) ---
-    "estamos", "buscamos", "participar", "traducir", "trabajar", "ayudar", "para", "por", "con", "los", 
-    "las", "una", "uno", "del", "que", "como", "mas", "sus", "nos", "les", "esta", "este", "gran", "parte",
-    "crear", "utilizar", "impulsar", "liderar", "mejorar", "rediseñar", "colaborando", "transformando",
-    "gestion", "herramientas", "detalle", "seras", "hacer", "haras", "soluciones", "necesidades",
-    "mantener", "priorizar", "vision", "realidad", "patrones", "oportunidades", "decisiones",
-    "requisitos", "experiencia", "capacidad", "dominio", "empatia", "disponibilidad", "plus",
-    "cultura", "confianza", "responsabilidad", "modelo", "ritmo", "feedback", "transparentes", 
-    "aprendizaje", "equipo", "ambicioso", "ownership", "impacto", "vida", "interfaz", "automatizacion",
-    "condiciones", "contrato", "proyecto", "modalidad", "ejecutivo", "indefinido", "freelance",
-    "analisis", "diseño", "desarrollo", "lanzamiento", "continua", "usuario", "cliente", "producto",
-    "servicio", "empresa", "compañia", "sector", "industria", "mercado", "negocio", "estrategia",
-    "funcionalidad", "tarea", "actividad", "objetivo", "meta", "resultado", "exito", "nivel", "grado",
-    "titulacion", "formacion", "educacion", "idioma", "ingles", "español", "frances", "italiano",
-    "oficina", "madrid", "barcelona", "valencia", "sevilla", "remoto", "hibrido", "presencial",
-    "jornada", "completa", "parcial", "intensiva", "horario", "flexible", "salario", "retribucion",
-    "beneficio", "social", "medico", "seguro", "ticket", "restaurante", "transporte", "gimnasio",
-    "vacaciones", "dias", "libre", "asunto", "propio", "cumpleaños", "navidad", "verano",
-    "alta", "baja", "media", "intermedia", "avanzada", "experto", "senior", "junior", "lead"
-]);
-
-// --- 2. FILE UPLOAD HANDLING (Unchanged) ---
+// --- 1. FILE UPLOAD HANDLING ---
 function handleFileUpload(input) {
     const file = input.files[0];
     if (!file) return;
@@ -131,7 +86,72 @@ function extractTextFromDOCX(file, outputElement) {
     reader.readAsArrayBuffer(file);
 }
 
-// --- 3. ANALYSIS LOGIC (Optimized) ---
+// --- 2. STRUCTURAL KEYWORD EXTRACTION (THE CORE FIX) ---
+
+function extractSmartKeywords(text) {
+    // Break text into lines to analyze structure
+    const lines = text.split(/\n/);
+    const candidateKeywords = new Set();
+    const rejectedKeywords = new Set();
+
+    lines.forEach(line => {
+        const cleanLine = line.trim();
+        if (cleanLine.length < 3) return;
+
+        // RULE 1: IGNORE HEADERS
+        // If a line is short (<40 chars) and ends in colon, or is just ALL CAPS (like "REQUIREMENTS"), ignore it.
+        const isHeader = (cleanLine.endsWith(':') || (cleanLine === cleanLine.toUpperCase() && cleanLine.split(' ').length < 4));
+        if (isHeader) return;
+
+        // RULE 2: SPLIT SENTENCE INTO WORDS
+        // We split by spaces, but keep punctuation to detect start of sentence
+        const words = cleanLine.split(/\s+/);
+
+        words.forEach((word, index) => {
+            // Clean punctuation (remove dots, commas, bullets)
+            const cleanWord = word.replace(/^[•\-\*]+/, '').replace(/[.,:;()!?]+$/, '');
+            
+            // Skip empty or tiny words
+            if (cleanWord.length < 2) return;
+
+            // CHECK: Is it an Acronym/Tech Term? (ALL CAPS or Mixed Numbers e.g. "B2B", "SaaS", "3D", "SQL")
+            const isAcronym = /^[A-Z0-9]+$/.test(cleanWord) && cleanWord.length > 1;
+            const isMixedTech = /[a-zA-Z]+[0-9]+|[0-9]+[a-zA-Z]+/.test(cleanWord); // e.g. "0to1", "Win10"
+            
+            // CHECK: Is it Capitalized? (Proper Noun style)
+            // Includes Spanish accents: ÁÉÍÓÚÑ
+            const isCapitalized = /^[A-ZÁÉÍÓÚÑ][a-z0-9áéíóúñ]+/.test(cleanWord);
+
+            if (isAcronym || isMixedTech) {
+                // Always accept acronyms (SQL, AWS, B2B)
+                candidateKeywords.add(cleanWord);
+            } else if (isCapitalized) {
+                // RULE 3: MID-SENTENCE DETECTION
+                // If it's the first word of the line/sentence, it's suspicious (likely a verb like "Crear").
+                // If it's NOT the first word, it's likely a skill (like "...using Figma").
+                
+                if (index === 0) {
+                    // It's the first word. Unless we've seen it elsewhere as a skill, mark it as "rejected" for now.
+                    // We don't add it yet.
+                    rejectedKeywords.add(cleanWord);
+                } else {
+                    // It's in the middle of a sentence. It's almost certainly a Proper Noun/Skill.
+                    // Exclude common stop words that might be capitalized by mistake
+                    if (!["The", "And", "With", "For", "Para", "Con", "Las", "Los"].includes(cleanWord)) {
+                        candidateKeywords.add(cleanWord);
+                    }
+                }
+            }
+        });
+    });
+
+    // Final Cleanup: Return candidates. 
+    // Note: We deliberately DO NOT include words that ONLY appeared at the start of sentences (rejectedKeywords).
+    return Array.from(candidateKeywords);
+}
+
+
+// --- 3. ANALYSIS LOGIC ---
 
 function startAnalysis() {
     const jd = document.getElementById('jdInput').value;
@@ -168,26 +188,15 @@ function performAnalysis(jd, resume) {
         "Language & Tone (AU English)": []
     };
 
-    // --- A. INTELLIGENT KEYWORD MATCHING (FILTERED) ---
-    // Match Uppercase words, OR words with dashes/numbers (like "0-to-1", "B2B", "SaaS")
-    // This Regex finds: "Python", "SQL", "Full-Stack", "Go-to-Market"
-    const jdTokens = jd.match(/\b([A-Z][a-zA-Z0-9]+|[a-zA-Z0-9]+-[a-zA-Z0-9]+)\b/g) || [];
+    // --- A. INTELLIGENT KEYWORD MATCHING ---
+    const extractedKeywords = extractSmartKeywords(jd);
     
-    // Strict Filtering
-    const uniqueJdKeywords = [...new Set(jdTokens)].filter(w => {
-        const cleanWord = w.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (cleanWord.length < 2) return false; // Ignore single letters
-        if (ignoredKeywords.has(cleanWord)) return false; // Blocklist check
-        if (!isNaN(cleanWord)) return false; // Ignore pure numbers
-        return true;
-    });
-    
+    // Filter against Resume
     let matchedKeywords = 0;
     let missingKeywords = [];
 
-    uniqueJdKeywords.forEach(keyword => {
-        // Create regex to match whole word, case insensitive
-        // Escape special chars like "+" for C++
+    extractedKeywords.forEach(keyword => {
+        // Regex for whole word match, case insensitive, escaping special chars (C++, Node.js)
         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
         
@@ -198,24 +207,25 @@ function performAnalysis(jd, resume) {
         }
     });
 
-    // Score: Reward strictly for high-value matches
-    const keywordRatio = matchedKeywords / (uniqueJdKeywords.length || 1);
-    score += Math.min(30, Math.ceil(keywordRatio * 40)); // Up to 30 points
+    // Score Calculation (Cap denominator at 15 to be fair)
+    const scoreDenominator = Math.min(extractedKeywords.length, 15) || 1;
+    const keywordRatio = matchedKeywords / scoreDenominator;
+    score += Math.min(30, Math.ceil(keywordRatio * 40)); 
 
     if(missingKeywords.length > 0) {
-        // Show only top 10 relevant keywords
-        const topMissing = missingKeywords.slice(0, 10).join(", ");
+        // Sort by length (longer keywords usually more specific)
+        const topMissing = missingKeywords.sort((a,b) => b.length - a.length).slice(0, 10).join(", ");
         suggestions["High-Value Keywords (ATS)"].push(
-            `<strong>Potential Hard Skills Missing:</strong> The JD emphasizes these specific terms. Ensure you mention them if you have the skill: <br><br><span class="highlight" style="font-size:1.1em">${topMissing}</span>`
+            `<strong>Potential Hard Skills Missing:</strong> Based on analyzing Proper Nouns and Acronyms in the JD (ignoring generic verbs), you might be missing: <br><br><span class="highlight" style="font-size:1.1em">${topMissing}</span>`
         );
     } else {
-        suggestions["High-Value Keywords (ATS)"].push("Excellent. You have covered the primary technical/hard skills mentioned in the JD.");
+        suggestions["High-Value Keywords (ATS)"].push("Excellent. You have covered the primary technical/hard skills detected in the JD.");
         score += 5;
     }
 
     // --- B. IMPACT & XYZ FORMULA ---
-    const sentences = resume.split(/[.!?\n]+/); // Split by punctuation or newlines
-    const significantSentences = sentences.filter(s => s.trim().length > 30); // Ignore short lines/headers
+    const sentences = resume.split(/[.!?\n]+/); 
+    const significantSentences = sentences.filter(s => s.trim().length > 30); 
     let xyzCount = 0;
     let weakSentences = [];
 
@@ -226,7 +236,6 @@ function performAnalysis(jd, resume) {
         if (hasMetric) {
             xyzCount++;
         } else {
-            // Only flag weak verbs if no metric is present
             weakVerbs.forEach(weak => {
                 if (sentence.toLowerCase().includes(" " + weak.toLowerCase() + " ")) {
                     if(weakSentences.length < 2) weakSentences.push(sentence.trim());
@@ -235,11 +244,10 @@ function performAnalysis(jd, resume) {
         }
     });
 
-    // Metric Density: We expect ~30% of bullet points to have metrics
     const metricDensity = xyzCount / (significantSentences.length || 1);
     
     if(metricDensity > 0.3 || xyzCount > 5) score += 40;
-    else score += (metricDensity * 100); // Scale score based on density
+    else score += (metricDensity * 100); 
 
     if(xyzCount < 5) {
         suggestions["Manager Impact (XYZ Formula)"].push(
@@ -280,7 +288,7 @@ function performAnalysis(jd, resume) {
     if(hasEmail && hasLinkedIn) score += 15;
     else {
         if(!hasEmail) suggestions["Formatting & Contact"].push("<strong>Critical:</strong> No valid email address detected.");
-        if(!hasLinkedIn) suggestions["Formatting & Contact"].push("<strong>Social Proof:</strong> LinkedIn URL is missing. This is often the first thing a recruiter checks.");
+        if(!hasLinkedIn) suggestions["Formatting & Contact"].push("<strong>Social Proof:</strong> LinkedIn URL missing. This is often the first thing a recruiter checks.");
         score += 5;
     }
 
