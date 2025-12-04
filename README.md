@@ -35,7 +35,6 @@
             <img src="assets/aws.png" class="logo-img">
             <img src="assets/airbus.png" class="logo-img">
             <img src="assets/180dc.png" class="logo-img">
-            <img src="assets/fpdgi.png" class="logo-img">
             <img src="assets/uc3m.png" class="logo-img">
             <img src="assets/taltech.png" class="logo-img">
             <img src="assets/upm.png" class="logo-img">
@@ -46,7 +45,6 @@
             <img src="assets/aws.png" class="logo-img">
             <img src="assets/airbus.png" class="logo-img">
             <img src="assets/180dc.png" class="logo-img">
-            <img src="assets/fpdgi.png" class="logo-img">
             <img src="assets/uc3m.png" class="logo-img">
             <img src="assets/taltech.png" class="logo-img">
             <img src="assets/upm.png" class="logo-img">
