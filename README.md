@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="/assets/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Javier Barrera</title>
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,8 +15,9 @@
         <div class="logo">Javier Barrera</div>
         <div class="menu">
             <a href="index.html">Home</a>
-            <!-- LINK FIXED: Points to the new separate writing page -->
             <a href="writing.html">Writing</a>
+            <!-- NEW TOOL BUTTON ADDED HERE -->
+            <a href="resume-reviewer.html">Resume AI</a>
             <a href="mailto:javier@gmail.com" class="cta-button">Get in Touch</a>
         </div>
     </nav>
@@ -33,6 +34,7 @@
     <div class="marquee-wrapper">
         <div class="marquee-track">
             <!-- Set 1: Unique List -->
+            <img src="assets/revolut.png" class="logo-img">
             <img src="assets/aws.png" class="logo-img">
             <img src="assets/airbus.png" class="logo-img">
             <img src="assets/180dc.png" class="logo-img">
@@ -43,6 +45,7 @@
             <img src="assets/polito.png" class="logo-img">
             
             <!-- Set 2: Duplicate for Infinite Loop -->
+            <img src="assets/revolut.png" class="logo-img">
             <img src="assets/aws.png" class="logo-img">
             <img src="assets/airbus.png" class="logo-img">
             <img src="assets/180dc.png" class="logo-img">
@@ -65,7 +68,7 @@
                 <div class="read-more">Read Article</div>
             </div>
         </a>
-        <!-- LINK FIXED: Points to template -->
+        <!-- Points to template -->
         <a href="articles/template.html" class="card">
             <div class="card-image" style="background: linear-gradient(135deg, #00205B 0%, #005587 100%);"><span>✈️</span></div>
             <div class="card-content">
@@ -75,7 +78,7 @@
                 <div class="read-more">View Case Study</div>
             </div>
         </a>
-        <!-- LINK FIXED: Points to template -->
+        <!-- Points to template -->
          <a href="articles/template.html" class="card">
             <div class="card-image" style="background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);"><span>⚡</span></div>
             <div class="card-content">
